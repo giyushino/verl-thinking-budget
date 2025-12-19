@@ -479,17 +479,22 @@ class vLLMHttpServerBase:
             assert thinking_res is not None
 
             thinking_token_ids = list(thinking_res.outputs[0].token_ids)
+            num_response_tokens = 0
 
             # If the thinking delimiter is not in the token_ids, append it
             if self.config.thinking_delimiter_id not in thinking_token_ids:
                 thinking_token_ids.append(self.config.thinking_delimiter_id)
+            # if we already have the thinking delimeter in here, then we only
+            # need to gen n - tokens after delimeter
+            else:
+                thinking_delimiter_pos = thinking_token_ids.index(self.config.thinking_delimiter_id) 
+                num_response_tokens = len(thinking_token_ids) - thinking_delimiter_pos - 1
 
             # Phase 2: Generate response tokens
             # Build full prompt: original prompt + thinking tokens
             full_prompt_ids = prompt_ids + thinking_token_ids
-            # maybe i don't like this, change this? we can just paass in max_tokens to be max_tokens
-            #response_max_tokens = max_tokens - len(thinking_token_ids) 
-            response_sampling_params = SamplingParams(max_tokens=max_tokens, **sampling_params)
+            # then we'll generate tokens based on how many response tokens we already have
+            response_sampling_params = SamplingParams(max_tokens=max_tokens - num_response_tokens, **sampling_params)
 
             response_prompt = TokensPrompt(
                 prompt_token_ids=full_prompt_ids, multi_modal_data={"image": image_data} if image_data else None

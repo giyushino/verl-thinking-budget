@@ -10,8 +10,10 @@ conda create -n thinking python==3.12
 conda activate thinking
 cd verl
 bash scripts/install_vllm_sglang_mcore.sh
-pip install -e . --no-deps
+pip install -e .
 cd ..
+pip install -e .
+uv pip install vllm==0.11.0 --no-cache
 ```
 ## Important files to look at
     - verl-thinking-budget/verl/verl/workers/rollout/vllm_rollout/vllm_async_server.py
