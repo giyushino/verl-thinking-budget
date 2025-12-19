@@ -464,10 +464,10 @@ class vLLMHttpServerBase:
 
         # if we specify a thinking budget
         if self.config.thinking_budget > 0:
-            print("we're using a thinking budget")
+            #print("we're using a thinking budget")
             # Phase 1: Generate thinking tokens
             thinking_sampling_params = SamplingParams(max_tokens=self.config.thinking_budget, **sampling_params)
-            print("first round of generating thinking tokens")
+            #print("first round of generating thinking tokens")
             generator = self.engine.generate(
                 prompt=prompt, sampling_params=thinking_sampling_params, request_id=f"{request_id}_thinking", lora_request=lora_request
             )
@@ -488,13 +488,13 @@ class vLLMHttpServerBase:
             # Build full prompt: original prompt + thinking tokens
             full_prompt_ids = prompt_ids + thinking_token_ids
             # maybe i don't like this, change this? we can just paass in max_tokens to be max_tokens
-            response_max_tokens = max_tokens - len(thinking_token_ids) 
-            response_sampling_params = SamplingParams(max_tokens=response_max_tokens, **sampling_params)
+            #response_max_tokens = max_tokens - len(thinking_token_ids) 
+            response_sampling_params = SamplingParams(max_tokens=max_tokens, **sampling_params)
 
             response_prompt = TokensPrompt(
                 prompt_token_ids=full_prompt_ids, multi_modal_data={"image": image_data} if image_data else None
             )
-            print("second round of genreation for rest of output")
+            #print("second round of genreation for rest of output")
             generator = self.engine.generate(
                 prompt=response_prompt, sampling_params=response_sampling_params, request_id=f"{request_id}_response", lora_request=lora_request
             )
