@@ -13,7 +13,7 @@ export PYTHONPATH="$PWD/src:$PYTHONPATH"
 
 # Configuration
 MODEL_NAME=Qwen/Qwen3-0.6B
-LORA_PATH=/home/allanz/verl-thinking-budget/checkpoints/thinking/new_poly_2048_2048/global_step_112/actor/lora_adapter/
+LORA_PATH=none
 THINKING_BUDGET=512
 RESPONSE_BUDGET=2048
 THINKING_END_TOKEN="</think>"
@@ -24,13 +24,13 @@ N_SAMPLES=10
 K_VALUES="1 10"
 MODE=eval
 SAVE_NAME="all"
-SAVE_FOLDER=new_poly_0_6
+SAVE_FOLDER=base
 SAVE_PATH=$PWD/benchmarks
 GPU_MEM_UTIL=0.9
 DATASET_NAMES="new_poly calc_mixed new_gcd"
 DATASET_PATHS="none none none"
 
-CUDA_VISIBLE_DEVICES=1 python -m thinking.eval_faster \
+CUDA_VISIBLE_DEVICES=0 python -m thinking.eval_faster \
     --model_name $MODEL_NAME \
     --lora_path $LORA_PATH \
     --thinking_budget $THINKING_BUDGET \
@@ -49,3 +49,4 @@ CUDA_VISIBLE_DEVICES=1 python -m thinking.eval_faster \
     --dataset_paths $DATASET_PATHS \
     --force
     $@
+
