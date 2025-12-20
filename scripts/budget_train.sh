@@ -35,9 +35,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python $PWD/verl/verl/trainer/main_ppo.py \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=False \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=2 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
-    +actor_rollout_ref.model.override_config.attn_implementation=eager \
     actor_rollout_ref.rollout.name=vllm \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
     actor_rollout_ref.rollout.n=16 \
     actor_rollout_ref.rollout.load_format=safetensors \
     actor_rollout_ref.rollout.layered_summon=True \
@@ -56,7 +55,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python $PWD/verl/verl/trainer/main_ppo.py \
     custom_reward_function.name=compute_score \
     trainer.logger='["console","wandb"]' \
     trainer.project_name='thinking' \
-    trainer.experiment_name='new_poly_0_6' \
+    trainer.experiment_name='new_poly_2048_2048' \
     trainer.total_epochs=2 $@
 
 

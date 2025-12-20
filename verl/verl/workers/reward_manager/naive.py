@@ -74,6 +74,10 @@ class NaiveRewardManager(AbstractRewardManager):
             valid_response_length = data_item.batch["attention_mask"][prompt_length:].sum()
             valid_response_ids = response_ids[:valid_response_length]
 
+            print(f"[DEBUG REWARD] valid_response_length={valid_response_length}, response_ids shape={response_ids.shape}")
+            print(f"[DEBUG REWARD] First 10 response token IDs: {valid_response_ids[:10].tolist()}")
+            print(f"[DEBUG REWARD] Last 10 response token IDs: {valid_response_ids[-10:].tolist()}")
+
             # decode
             prompt_str = self.tokenizer.decode(valid_prompt_ids, skip_special_tokens=True)
             response_str = self.tokenizer.decode(valid_response_ids, skip_special_tokens=True)

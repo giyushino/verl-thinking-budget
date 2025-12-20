@@ -192,7 +192,8 @@ class vLLMHttpServerBase:
 
         self.config: RolloutConfig = omega_conf_to_dataclass(config)
         self.model_config: HFModelConfig = omega_conf_to_dataclass(model_config, dataclass_type=HFModelConfig)
-        self.config.max_model_len = self.config.prompt_length + self.config.response_length
+        # Let vLLM use the model's default max_model_len (context window)
+        # We control generation length via thinking_budget and response_length instead
         self.rollout_mode = rollout_mode
         self.workers = workers
 
@@ -444,7 +445,8 @@ class vLLMHttpServerBase:
     ) -> TokenOutput:
         """Generate sequence with token-in-token-out."""
         # TODO(@wuxibin): switch to `/generate` http endpoint once multi-modal support ready.
-        max_tokens = self.config.max_model_len - len(prompt_ids)
+        # Use response_length as the response budget (not including thinking tokens)
+        response_budget = self.config.response_length
         sampling_params["logprobs"] = 0 if sampling_params.pop("logprobs", False) else None
         sampling_params.setdefault("repetition_penalty", self.config.get("repetition_penalty", 1.0))
 
@@ -464,10 +466,12 @@ class vLLMHttpServerBase:
 
         # if we specify a thinking budget
         if self.config.thinking_budget > 0:
-            #print("we're using a thinking budget")
+            #print(f"[DEBUG] request_id={request_id}: Starting thinking budget generation")
+            #print(f"[DEBUG] request_id={request_id}: thinking_budget={self.config.thinking_budget}")
+            #print(f"[DEBUG] request_id={request_id}: thinking_delimiter_id={self.config.thinking_delimiter_id}")
             # Phase 1: Generate thinking tokens
             thinking_sampling_params = SamplingParams(max_tokens=self.config.thinking_budget, **sampling_params)
-            #print("first round of generating thinking tokens")
+            #print(f"[DEBUG] request_id={request_id}: Phase 1 - generating thinking tokens with max_tokens={self.config.thinking_budget}")
             generator = self.engine.generate(
                 prompt=prompt, sampling_params=thinking_sampling_params, request_id=f"{request_id}_thinking", lora_request=lora_request
             )
@@ -480,26 +484,33 @@ class vLLMHttpServerBase:
 
             thinking_token_ids = list(thinking_res.outputs[0].token_ids)
             num_response_tokens = 0
+            #print(f"[DEBUG] request_id={request_id}: Phase 1 COMPLETE - got {len(thinking_token_ids)} thinking tokens")
+            #print(f"[DEBUG] request_id={request_id}: Phase 1 finish_reason={thinking_res.outputs[0].finish_reason}")
 
             # If the thinking delimiter is not in the token_ids, append it
             if self.config.thinking_delimiter_id not in thinking_token_ids:
                 thinking_token_ids.append(self.config.thinking_delimiter_id)
+                #print(f"[DEBUG] request_id={request_id}: Appended thinking delimiter (id={self.config.thinking_delimiter_id})")
             # if we already have the thinking delimeter in here, then we only
             # need to gen n - tokens after delimeter
             else:
-                thinking_delimiter_pos = thinking_token_ids.index(self.config.thinking_delimiter_id) 
+                thinking_delimiter_pos = thinking_token_ids.index(self.config.thinking_delimiter_id)
                 num_response_tokens = len(thinking_token_ids) - thinking_delimiter_pos - 1
+                #print(f"[DEBUG] request_id={request_id}: Found thinking delimiter at pos {thinking_delimiter_pos}, num_response_tokens={num_response_tokens}")
 
             # Phase 2: Generate response tokens
             # Build full prompt: original prompt + thinking tokens
             full_prompt_ids = prompt_ids + thinking_token_ids
-            # then we'll generate tokens based on how many response tokens we already have
-            response_sampling_params = SamplingParams(max_tokens=max_tokens - num_response_tokens, **sampling_params)
+            # Only subtract tokens if Phase 1 already generated some response tokens after </think>
+            response_max_tokens = response_budget - num_response_tokens
+            #print(f"[DEBUG] request_id={request_id}: Phase 2 - response_budget={response_budget}, num_response_tokens={num_response_tokens}, response_max_tokens={response_max_tokens}")
+
+            response_sampling_params = SamplingParams(max_tokens=response_max_tokens, **sampling_params)
 
             response_prompt = TokensPrompt(
                 prompt_token_ids=full_prompt_ids, multi_modal_data={"image": image_data} if image_data else None
             )
-            #print("second round of genreation for rest of output")
+            #print(f"[DEBUG] request_id={request_id}: Phase 2 - generating response tokens")
             generator = self.engine.generate(
                 prompt=response_prompt, sampling_params=response_sampling_params, request_id=f"{request_id}_response", lora_request=lora_request
             )
@@ -510,9 +521,14 @@ class vLLMHttpServerBase:
             assert response_res is not None
 
             response_token_ids = list(response_res.outputs[0].token_ids)
+            #print(f"[DEBUG] request_id={request_id}: Phase 2 COMPLETE - got {len(response_token_ids)} response tokens")
+            #print(f"[DEBUG] request_id={request_id}: Phase 2 finish_reason={response_res.outputs[0].finish_reason}")
 
             # Concatenate thinking + response tokens
             all_token_ids = thinking_token_ids + response_token_ids
+            #print(f"[DEBUG] request_id={request_id}: Total tokens = {len(all_token_ids)} (thinking={len(thinking_token_ids)}, response={len(response_token_ids)})")
+            #print(f"[DEBUG] request_id={request_id}: First 10 response token IDs: {response_token_ids[:10]}")
+            #print(f"[DEBUG] request_id={request_id}: Last 10 response token IDs: {response_token_ids[-10:]}")
 
             # Handle log probs (concatenate if enabled)
             log_probs = None
@@ -554,7 +570,7 @@ class vLLMHttpServerBase:
 
         # otherwise default to normal behavior
         else:
-            sampling_params = SamplingParams(max_tokens=max_tokens, **sampling_params)
+            sampling_params = SamplingParams(max_tokens=response_budget, **sampling_params)
 
             generator = self.engine.generate(
                 prompt=prompt, sampling_params=sampling_params, request_id=request_id, lora_request=lora_request

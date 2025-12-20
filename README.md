@@ -14,6 +14,7 @@ pip install -e .
 cd ..
 pip install -e .
 uv pip install vllm==0.11.0 --no-cache
+uv pip install flash-attn --no-build-isolation
 ```
 ## Important files to look at
     - verl-thinking-budget/verl/verl/workers/rollout/vllm_rollout/vllm_async_server.py
