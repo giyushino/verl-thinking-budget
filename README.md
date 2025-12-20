@@ -108,6 +108,5 @@ See `scripts/eval.sh` for more options.
 
 ## Notes
 
-- Set `max_response_length` >= `thinking_budget + response_budget` to avoid truncation
 - If the model doesn't generate `</think>` within the thinking budget, it's automatically appended
 - LoRA adapters are saved in the checkpoint directory and can be loaded via `--lora_path`
