@@ -16,8 +16,8 @@ This project implements **two-phase generation with budget constraints**:
 ## Installation
 
 ```bash
-git clone git@github.com:giyushino/verl-thinking-budget.git
-cd verl-thinking-budget
+git clone git@github.com:giyushino/grpo-thinking-budget.git
+cd grpo-thinking-budget
 conda create -n thinking python==3.12
 conda activate thinking
 
