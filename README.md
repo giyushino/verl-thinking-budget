@@ -92,8 +92,8 @@ See `scripts/eval.sh` for more options.
 ├── scripts/
 │   ├── budget_train.sh   # Training script
 │   └── eval.sh           # Evaluation script
-├── verl/                  # VeRL framework
-└── datasets/              # Training data (parquet format)
+├── verl/                 # VeRL framework
+└── datasets/             # Training data (parquet format)
 ```
 
 ## Notes
