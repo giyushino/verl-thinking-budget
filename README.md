@@ -1,6 +1,6 @@
 # verl-thinking-budget
 
-Train LLMs with constrained chain-of-thought reasoning using GRPO (Group Relative Policy Optimization) and the VeRL framework. Also evaluate performance with fixed thinking token budgets
+Train LLMs with constrained chain-of-thought reasoning using GRPO. Built off of verl 
 
 ## Overview
 
@@ -8,16 +8,6 @@ This project implements **two-phase generation with budget constraints**:
 
 1. **Thinking Phase**: Generate up to `thinking_budget` tokens for chain-of-thought reasoning
 2. **Response Phase**: Generate up to `response_budget` tokens for the final answer
-
-Useful for training models like Qwen3 to reason efficiently within token limits.
-
-## Features
-
-- **Thinking Budget**: Constrain reasoning tokens during training and inference
-- **GRPO Training**: Group relative policy optimization with LoRA support
-- **Multi-GPU Training**: FSDP support for distributed training
-- **Fast Evaluation**: Batch evaluation with pass@k metrics across multiple datasets
-- **Math Grading**: Robust answer extraction from `\boxed{}` format with numerical normalization
 
 ## Key Files
 
